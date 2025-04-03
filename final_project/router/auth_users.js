@@ -39,24 +39,31 @@ regd_users.post("/login", (req,res) => {
 
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  let {username} = req.user;
-  let isbn = req.params.isbn;
-  let {review} = req.query;
+ 
+    return res.json({
+        user: req.user.username
+    })
+//   let username = req.user.username;
+//   let isbn = req.params.isbn;
+//   let {review} = req.query;
 
-  if (!books[isbn]) {
-    return res.status(401).json({error: "Can't find this book"});
-  }
+//   if (!books[isbn]) {
+//     return res.status(401).json({error: "Can't find this book"});
+//   }
 
-  if (!review) {
-    return res.status(202).json({message: "You don't comment"});
-  }
+//   if (!review) {
+//     return res.status(202).json({message: "You don't comment"});
+//   }
 
-  books[isbn].review[username] = review;
+//   if (!books[isbn].reviews) {
+//     books[isbn].reviews = {};
+//   }
 
-  res.send(JSON.stringify({
-    message : books[isbn].review[username]
-  }, null, 2));
+//   books[isbn].reviews[username] = review;
 
+//   res.send(JSON.stringify({
+//     message : books[isbn].reviews[username]
+//   }, null, 2));
 });
 
 module.exports.authenticated = regd_users;
