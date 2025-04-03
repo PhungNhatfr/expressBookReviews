@@ -18,16 +18,19 @@ const authenticatedUser = (username,password)=>{
 //only registered users can login
 regd_users.post("/login", (req,res) => {
     let {username, password} = req.body;
+    
 
     if (authenticatedUser(username, password)) {
         let accessToken = jwt.sign({username}, SECRET_KEY, {expiresIn: "1h"});
+        req.session.authorization = {
+            accessToken, 
+            username
+        };
         res.send(JSON.stringify({
             message: "Login successful",
-            token
+            accessToken,
+            authorization: req.session.authorization
         }, null, 2));
-        req.session.authorization = {
-            accessToken, username
-        };
     } else {
         return res.status(404).json({error: "The user doesn't exist"});
     }
@@ -35,8 +38,8 @@ regd_users.post("/login", (req,res) => {
 
 
 // Add a book review
-regd_users.put("/auth/review/:isbn",verifyToken ,(req, res) => {
-  let username = req.session.authorization["username"];
+regd_users.put("/auth/review/:isbn", (req, res) => {
+  let {username} = req.user;
   let isbn = req.params.isbn;
   let {review} = req.query;
 
