@@ -20,43 +20,25 @@ regd_users.post("/login", (req,res) => {
     let {username, password} = req.body;
 
     if (authenticatedUser(username, password)) {
-        let token = jwt.sign({username}, SECRET_KEY, {expiresIn: "1h"});
+        let accessToken = jwt.sign({username}, SECRET_KEY, {expiresIn: "1h"});
         res.send(JSON.stringify({
             message: "Login successful",
             token
         }, null, 2));
-        req.session.token = token;
+        req.session.authorization = {
+            accessToken, username
+        };
     } else {
         return res.status(404).json({error: "The user doesn't exist"});
     }
 });
 
-//Middleware to verify authentication
-const verifyToken = (req, res, next) => {
-    let token = req.session.token;
 
-    if (!token) {
-        return res.status(404).json({
-            error: "Error: Access denied!"
-        })
-    }
-
-    jwt.verify(token, SECRET_KEY, (error, decoded) => {
-        if (error) {
-            return res.status(404).json({
-                error: "Invalid token"
-            })
-        } else {
-            req.username = decoded.username;
-            next();
-        }
-    })
-}
 // Add a book review
 regd_users.put("/auth/review/:isbn",verifyToken ,(req, res) => {
-  let username = req.username;
+  let username = req.session.authorization["username"];
   let isbn = req.params.isbn;
-  let {review} = req.body;
+  let {review} = req.query;
 
   if (!books[isbn]) {
     return res.status(401).json({error: "Can't find this book"});
