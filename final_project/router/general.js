@@ -4,6 +4,7 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
+const axios = require('axios');
 
 public_users.post("/register", (req,res) => {
   let {username, password} = req.body;
@@ -26,7 +27,15 @@ public_users.post("/register", (req,res) => {
 
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
-  res.send(JSON.stringify(books, null, 2));
+    new Promise((resolve) => {
+        setTimeout(() => resolve(books), 100);
+    })
+    .then(bookList => {
+        res.status(200).json(bookList);
+    })
+    .catch( err => {
+        res.status(400).json({ error: "Unavailable book list"});
+    })
 });
 
 // Get book details based on ISBN
@@ -34,11 +43,20 @@ public_users.get('/isbn/:isbn',function (req, res) {
   //Retrive the ISBN from request parameters
   let ISBN = parseInt(req.params.isbn);
 
-  if (books[ISBN]) {
-    res.send(JSON.stringify(books[ISBN], null, 2));
-  } else {
-    res.status(401).json({error : "isbn invalid"});
-  }
+  new Promise((resolve,reject) => {
+    const book = books[ISBN];
+    if (book) {
+        resolve(book);
+    } else {
+        reject(new Error("Book not found"));
+    }
+  })
+  .then(book => {
+    res.status(200).json(book);
+  })
+  .catch(error => {
+    res.status(404).json({message: error.message});
+  })
  });
   
 // Get book details based on author
@@ -47,36 +65,50 @@ public_users.get('/author/:author',function (req, res) {
   let books_without_isbn = Object.values(books);
   let author = req.params.author;
   
-  books_without_isbn.forEach((book) => {
-    if (book["author"] === author ) {
-        filterred_books.push(book)
-    }
+  new Promise((resolve, reject) => {
+    books_without_isbn.forEach((book) => {
+        if (book["author"] === author ) {
+            filterred_books.push(book)
+        }
+      });
+    
+    if (filterred_books.length !== 0) {
+        resolve(filterred_books);
+    } else {
+        reject(new Error("Not found the book"));
+      }
   })
-
-  if (filterred_books.length !== 0) {
-    res.send(JSON.stringify(filterred_books, null, 2));
-  } else {
-    res.status(402).json({error: `Could not find ${author}`});
-  }
+  .then(filterred_books => {
+    res.status(200).json(filterred_books)})
+      .catch(error => {
+    res.status(404).json({message: error.message});
+  })
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
-  let filterred_books = [];
-  let books_without_isbn = Object.values(books);
-  let title = req.params.title;
-  
-  books_without_isbn.forEach((book) => {
-    if (book["title"] === title ) {
-        filterred_books.push(book)
-    }
-  })
-
-  if (filterred_books.length !== 0) {
-    res.send(JSON.stringify(filterred_books, null, 2));
-  } else {
-    res.status(402).json({error: `Could not find ${title}`});
-  }
+    let filterred_books = [];
+    let books_without_isbn = Object.values(books);
+    let title = req.params.title;
+    
+    new Promise((resolve, reject) => {
+      books_without_isbn.forEach((book) => {
+          if (book["title"] === title ) {
+              filterred_books.push(book)
+          }
+        });
+      
+      if (filterred_books.length !== 0) {
+          resolve(filterred_books);
+      } else {
+          reject(new Error("Not found the book"));
+        }
+    })
+    .then(filterred_books => {
+      res.status(200).json(filterred_books)})
+        .catch(error => {
+      res.status(404).json({message: error.message});
+    })
 });
 
 //  Get book review
